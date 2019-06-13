@@ -2,8 +2,11 @@ package com.creative.servicetesting;
 
 import android.app.Service;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.LocationManager;
 import android.os.Binder;
 import android.os.IBinder;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,15 +19,56 @@ public class LocalWordService extends Service {
     private List<String> resultList = new ArrayList<String>();
     private int counter = 1;
 
+    private Thread mThread;
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        addResultValues();
-        return Service.START_NOT_STICKY;
+        Log.d("DEBUG", "on start command called");
+       // addResultValues();
+        findInBackground();
+        return Service.START_STICKY;
+    }
+
+
+    private void findInBackground(){
+        mThread = new Thread(new Runnable() {
+            boolean abort = false;
+
+            public void run() {
+
+                while (!abort) {
+
+
+                    try {
+
+
+
+                        if(serviceCallbacks != null){
+                            serviceCallbacks.doSomething();
+                        }else{
+                            Log.d("DEBUG","now i am in background haha");
+                        }
+
+                        Thread.sleep(5000);
+
+
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        abort = true;
+                        e.printStackTrace();
+                    }
+
+                }
+
+            }
+        });
+        mThread.start();
     }
 
     @Override
     public IBinder onBind(Intent intent) {
-        addResultValues();
+        Log.d("DEBUG", "on bind called");
+        //addResultValues();
         return mBinder;
     }
 
@@ -53,5 +97,15 @@ public class LocalWordService extends Service {
 
     public interface ServiceCallbacks {
         void doSomething();
+    }
+
+    @Override
+    public void onDestroy() {
+        // handler.removeCallbacks(sendUpdatesToUI);
+        super.onDestroy();
+        //Log.v("STOP_SERVICE", "DONE");
+        if(mThread != null)
+            mThread.interrupt();
+        //stopSelf();
     }
 }
